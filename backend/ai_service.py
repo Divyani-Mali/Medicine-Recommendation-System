@@ -1,12 +1,14 @@
 import os
 from google import genai
 from dotenv import load_dotenv
+import time
 
 load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+
 
 
 def generate_ai_summary(disease, symptoms, description, precautions, medications, diet, workout):
@@ -34,12 +36,17 @@ Write a short (4-6 sentence), warm, easy-to-understand summary for the patient e
 Keep it concise, no headings, plain paragraph text.
 """
 
-    try:
-        response = client.models.generate_content(
-            model="gemini-3.6-flash",
-            contents=prompt,
-        )
-        return response.text.strip()
-    except Exception as e:
-        print(f"AI summary generation failed: {e}")
-        return None
+    max_retries = 2
+    for attempt in range(max_retries + 1):
+        try:
+            response = client.models.generate_content(
+                model="gemini-3.6-flash",
+                contents=prompt,
+            )
+            return response.text.strip()
+        except Exception as e:
+            print(f"AI summary attempt {attempt + 1} failed: {e}")
+            if attempt < max_retries:
+                time.sleep(2)  # brief pause before retrying
+            else:
+                return None
